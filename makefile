@@ -23,3 +23,4 @@ dbs: ${OBJ}
 clean:
 	@rm -f *.o
 	@rm -f dbs
+	@rm -f dbs.core

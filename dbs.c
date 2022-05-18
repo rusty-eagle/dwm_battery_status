@@ -20,17 +20,32 @@ static const int signals[] = {
 };
 static char status_msg[STATUS_MAX];
 
-static char battery(void);
+static char battery_life(void);
+static char battery_stat(void);
 static void handler(int);
 
-static char battery(void) {
+static char battery_life(void) {
 	static int bl;
-	size_t bl_sz = sizeof(bl) * 4;
-	if (sysctlbyname(SYSCTL_BATTERY, &bl, &bl_sz, NULL, 0) == -1) {
+	size_t bl_sz = sizeof(bl);
+	if (sysctlbyname(SYSCTL_BAT_LIFE, &bl, &bl_sz, NULL, 0) == -1) {
 		warn("sysctl failure to get battery life");
 		return -1;
 	}
 	return (char)bl;
+}
+
+static char battery_stat(void) {
+	static int bl;
+	size_t bl_sz = sizeof(bl);
+	if (sysctlbyname(SYSCTL_BAT_STAT, &bl, &bl_sz, NULL, 0) == -1) {
+		warn("sysctl failure to get battery stat");
+		return 'x';
+	}
+
+	if (bl == BATTERY_CHARG)
+		return CHARGE_GLYPH;
+	else
+		return DRAIN_GLYPH;
 }
 
 static void handler(const int signum) {
@@ -77,7 +92,7 @@ int main(int argc, char **argv) {
 		errx(1, "Cannot open display");
 
 status_loop:
-	if ((result = snprintf(status_msg, STATUS_MAX, STATUS_FMT, battery())) == -1)
+	if ((result = snprintf(status_msg, STATUS_MAX, STATUS_FMT, battery_stat(), battery_life())) == -1)
 		warn("trouble stuffing status_msg");
 	else if (result >= STATUS_MAX)
 		warn("status message is too long");
