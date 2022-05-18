@@ -19,13 +19,18 @@ static const int signals[] = {
 	SIGINFO,
 };
 static char status_msg[STATUS_MAX];
+static const char battery_status[] = {
+	FULL_GLYPH,
+	DRAIN_GLYPH,
+	CHARGE_GLYPH,
+};
 
 static char battery_life(void);
 static char battery_stat(void);
 static void handler(int);
 
 static char battery_life(void) {
-	static int bl;
+	static unsigned int bl;
 	size_t bl_sz = sizeof(bl);
 	if (sysctlbyname(SYSCTL_BAT_LIFE, &bl, &bl_sz, NULL, 0) == -1) {
 		warn("sysctl failure to get battery life");
@@ -35,17 +40,16 @@ static char battery_life(void) {
 }
 
 static char battery_stat(void) {
-	static int bl;
+	static unsigned int bl;
 	size_t bl_sz = sizeof(bl);
 	if (sysctlbyname(SYSCTL_BAT_STAT, &bl, &bl_sz, NULL, 0) == -1) {
 		warn("sysctl failure to get battery stat");
 		return 'x';
 	}
 
-	if (bl == BATTERY_CHARG)
-		return CHARGE_GLYPH;
-	else
-		return DRAIN_GLYPH;
+	if (bl == BATTERY_FULL || bl == BATTERY_DRAIN || bl == BATTERY_CHARGE)
+		return battery_status[bl];
+	return UNKNOWN_GLYPH;
 }
 
 static void handler(const int signum) {
